@@ -1,0 +1,75 @@
+name: update
+
+on:
+  schedule:
+    - cron: "0 15 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - update.py
+      - .github/workflows/update.yaml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stocks-update-pages
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install yfinance==1.7.0 pandas==3.0.6
+
+      - name: Generate stock data
+        run: python update.py
+
+      - name: Save data snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          if ! git diff --staged --quiet; then
+            git commit -m "Update stock data"
+            git push origin HEAD:main
+          fi
+
+      - name: Prepare site
+        run: |
+          mkdir -p _site
+          cp index.html data.json _site/
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy updated site
+        id: deployment
+        uses: actions/deploy-pages@v4
