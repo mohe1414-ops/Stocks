@@ -14,6 +14,9 @@ import pandas as pd
 SYMBOLS = [
     "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AMD",
     "AVGO", "NFLX", "JPM", "V", "COST", "LLY", "CRM", "ORCL",
+    # Added for monitoring after review of the 2026-10-12 market close.
+    # Their daily classifications are calculated below, not fixed as ENTER.
+    "ETN", "TXN", "A", "XOM",
 ]
 
 
