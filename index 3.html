@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="الأسهم">
+<title>محلل الأسهم</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--tx:#14171c;--mu:#6b7280;--bd:#e5e7eb;--g:#15803d;--a:#b45309;--b:#1d4ed8;--o:#c2410c;--r:#b91c1c;--ac:#1d4ed8}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b22;--tx:#eceff4;--mu:#9aa3b2;--bd:#262c36;--g:#4ade80;--a:#fbbf24;--b:#60a5fa;--o:#fb923c;--r:#f87171;--ac:#60a5fa}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;line-height:1.5;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:640px;margin:0 auto;padding:14px}
+h1{font-size:22px;margin:6px 0 2px}
+.sub{color:var(--mu);font-size:13px;margin-bottom:12px}
+.row{display:flex;gap:8px;margin-bottom:10px}
+.row label{flex:1;font-size:12px;color:var(--mu)}
+input{width:100%;padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-size:16px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+.chip{flex:none;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:20px;padding:6px 13px;font-size:14px;font-family:inherit}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.sym{font-size:19px;font-weight:700}
+.px{color:var(--mu);font-size:14px}
+.badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;color:#fff}
+.bar{height:6px;background:var(--bd);border-radius:4px;margin:10px 0 4px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px}
+.sc{font-size:12px;color:var(--mu)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;text-align:center}
+.grid div{background:var(--bg);border-radius:8px;padding:6px 2px;font-size:11px;color:var(--mu)}
+.grid b{display:block;font-size:14px;color:var(--tx)}
+.why{font-size:12px;color:var(--mu);margin-top:8px}
+.note{font-size:12px;color:var(--mu);margin:8px 0}
+.warn{font-size:12px;color:var(--mu);text-align:center;margin:16px 0 8px}
+.ltr{direction:ltr;display:inline-block}
+</style>
+</head>
+<body>
+<main>
+<h1>📈 محلل الأسهم الأمريكية</h1>
+<div class="sub" id="date">جارٍ التحميل…</div>
+<div class="row">
+  <label>رأس المال ($)<input id="cap" type="number" inputmode="decimal" value="10000"></label>
+  <label>مخاطرة الصفقة (%)<input id="risk" type="number" inputmode="decimal" step="0.1" value="1"></label>
+</div>
+<div class="chips" id="chips"></div>
+<div id="list"></div>
+<div class="warn">يتحدث تلقائيًا كل يوم عمل بعد افتتاح السوق. تحليل تعليمي وليس نصيحة مالية، ولا ربح مضمون. تحقق من السعر الحالي والأخبار وموعد الأرباح قبل أي صفقة.</div>
+</main>
+<script>
+var LBL={ENTER:["دخول","--g"],PULLBACK:["انتظر تراجع","--b"],WATCH:["مراقبة","--a"],EARNINGS:["انتظر الأرباح","--o"],AVOID:["تجنب","--r"]};
+var rows=[],filter="ALL",cap=10000,risk=1;
+function esc(x){return String(x).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function qty(r){var d=r.p-r.stop;if(!(d>0))return 0;return Math.max(0,Math.floor(Math.min(cap*risk/100/d,cap*0.2/r.p)))}
+function chips(){var f=[["ALL","الكل"],["ENTER","دخول"],["PULLBACK","انتظر تراجع"],["WATCH","مراقبة"],["AVOID","تجنب"]];
+document.getElementById("chips").innerHTML=f.map(function(x){return'<button class="chip'+(filter===x[0]?" on":"")+'" data-f="'+x[0]+'">'+x[1]+'</button>'}).join("")}
+function render(){var h="";rows.filter(function(r){return filter==="ALL"||r.rec===filter}).forEach(function(r){
+var m=LBL[r.rec]||[r.rec,"--tx"],c="var("+m[1]+")";
+h+='<div class="card"><div class="top"><div><span class="sym ltr">'+esc(r.s)+'</span> <span class="px ltr">$'+r.p.toFixed(2)+'</span></div><span class="badge" style="background:'+c+'">'+esc(m[0])+'</span></div>'
++'<div class="bar"><i style="width:'+Math.max(0,Math.min(100,r.total))+'%;background:'+c+'"></i></div><div class="sc">الدرجة '+r.total+' من 100 · RSI '+r.rsi+' · 6 أشهر '+r.ret6m+'%</div>'
++'<div class="grid"><div>الدخول<b class="ltr">'+r.p.toFixed(2)+'</b></div><div>الوقف<b class="ltr">'+r.stop.toFixed(2)+'</b></div><div>الهدف<b class="ltr">'+r.tgt.toFixed(2)+'</b></div><div>الكمية<b>'+qty(r)+'</b></div></div>'
++(r.why&&r.why.length?'<div class="why">'+esc(r.why.join("، "))+'</div>':'')+'</div>'});
+document.getElementById("list").innerHTML=h||'<div class="note">لا نتائج.</div>'}
+document.getElementById("chips").addEventListener("click",function(e){var f=e.target.getAttribute("data-f");if(f){filter=f;chips();render()}});
+function rd(){cap=parseFloat(document.getElementById("cap").value)||0;risk=parseFloat(document.getElementById("risk").value)||0;render()}
+document.getElementById("cap").addEventListener("input",rd);document.getElementById("risk").addEventListener("input",rd);
+var d=document.getElementById("date");
+fetch("data.json?t="+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(o){
+rows=o.rows||[];var t=new Date(o.updated),age=(Date.now()-t)/36e5;
+d.textContent="آخر تحديث: "+t.toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"})+(age>96?" ⚠️ البيانات قديمة":"");
+chips();render()}).catch(function(){d.textContent="لم تُنشأ البيانات بعد. شغّل التحديث من تبويب Actions في GitHub.";chips()});
+</script>
+</body>
+</html>
