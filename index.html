@@ -92,6 +92,7 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 .pp-pos .bot-btn{font-size:12px;padding:5px 10px}
 .pp-up{color:var(--g)}.pp-dn{color:var(--r)}
 .pp-fields select{display:block;margin-top:4px;width:100%;min-height:44px;padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-size:16px;font-family:inherit}
+.pp-st b{font-size:20px}
 .pp-buy{width:100%;background:var(--g);color:#fff;border-color:var(--g);font-weight:700}
 </style>
 </head>
@@ -174,6 +175,14 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
     <div>ربح/خسارة مفتوحة<b class="ltr" id="ppOpen">—</b></div>
     <div>ربح/خسارة محققة<b class="ltr" id="ppReal">—</b></div>
   </div>
+  <div class="bot-stats pp-st">
+    <div>الصفقات المغلقة<b class="ltr" id="ppN">0</b></div>
+    <div>نسبة الصفقات الرابحة<b class="ltr" id="ppWin">—</b></div>
+    <div>متوسط الربح<b class="ltr" id="ppAvgW">—</b></div>
+    <div>متوسط الخسارة<b class="ltr" id="ppAvgL">—</b></div>
+    <div>أفضل صفقة<b class="ltr" id="ppBest">—</b></div>
+    <div>العائد الكلي<b class="ltr" id="ppRet">—</b></div>
+  </div>
   <div class="pnl-fields pp-fields">
     <label for="ppSym">السهم<select id="ppSym"></select></label>
     <label for="ppEntry">سعر الدخول ($)<input id="ppEntry" type="number" inputmode="decimal" step="any"></label>
@@ -183,6 +192,7 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
     <label>التكلفة<input id="ppCost" readonly tabindex="-1"></label>
   </div>
   <button id="ppBuy" class="bot-btn pp-buy" type="button">شراء تجريبي</button>
+  <button id="ppBuyAll" class="bot-btn" type="button" style="width:100%;margin-top:8px">شراء كل إشارات الدخول (تجريبي)</button>
   <p id="ppMsg" class="bot-meta" role="status"></p>
   <h3>الصفقات المفتوحة</h3><div id="ppList"></div>
   <h3>الصفقات المغلقة</h3><div id="ppHist"></div>
@@ -414,7 +424,21 @@ function ppPrefill(){
   ppCost();
 }
 function ppCost(){document.getElementById("ppCost").value=ppUsd((+document.getElementById("ppEntry").value||0)*(Math.floor(+document.getElementById("ppQty").value)||0))}
-function ppRender(){
+function ppStats(){
+  var h=pp.hist,w=h.filter(function(x){return x.pnl>0}),l=h.filter(function(x){return x.pnl<0});
+  var val=pp.pos.reduce(function(a,q){return a+(q.last||q.entry)*q.qty},0),start=pp.start||10000;
+  var set=function(i,t,c){var e=document.getElementById(i);e.textContent=t;e.className="ltr"+(c?" "+c:"")};
+  var avg=function(a){return a.reduce(function(t,x){return t+x.pnl},0)/a.length};
+  set("ppN",String(h.length));
+  set("ppWin",h.length?(w.length/h.length*100).toFixed(0)+"%":"—");
+  set("ppAvgW",w.length?ppUsd(avg(w)):"—",w.length?"pp-up":"");
+  set("ppAvgL",l.length?ppUsd(avg(l)):"—",l.length?"pp-dn":"");
+  var best=h.reduce(function(m,x){return m===null||x.pnl>m?x.pnl:m},null);
+  set("ppBest",best===null?"—":ppUsd(best),best===null?"":ppCls(best));
+  var ret=(pp.cash+val-start)/start*100;
+  set("ppRet",(ret>=0?"+":"")+ret.toFixed(2)+"%",ppCls(ret));
+}
+function ppRender(){ppStats();
   var open=0,val=0;
   pp.pos.forEach(function(p){var l=p.last||p.entry;open+=(l-p.entry)*p.qty;val+=l*p.qty});
   var real=pp.hist.reduce(function(a,h){return a+h.pnl},0);
@@ -457,7 +481,17 @@ document.getElementById("ppList").addEventListener("click",function(e){
 });
 document.getElementById("ppReset").addEventListener("click",function(){
   var v=prompt("الرصيد الابتدائي للحساب التجريبي ($)",String(cap||10000));if(v===null)return;v=+v;if(!(v>0))return ppMsg("أدخل رصيدًا صحيحًا.");
-  pp={cash:v,pos:[],hist:[],id:1};ppSave();ppRender();ppMsg("أُعيد ضبط الحساب.");
+  pp={cash:v,start:v,pos:[],hist:[],id:1};ppSave();ppRender();ppMsg("أُعيد ضبط الحساب.");
+});
+document.getElementById("ppBuyAll").addEventListener("click",function(){
+  var held={};pp.pos.forEach(function(q){held[q.s]=1});
+  var c=rows.filter(function(r){return r.rec==="ENTER"&&!held[r.s]&&qty(r)>0});
+  if(!c.length)return ppMsg("لا توجد إشارات دخول جديدة غير مشتراة.");
+  if(!confirm("شراء تجريبي لـ "+c.length+" سهم بالكمية المقترحة لكل سهم؟"))return;
+  var ok=[],no=[];
+  c.forEach(function(r){var n=qty(r);if(r.p*n>pp.cash){no.push(r.s);return}pp.cash-=r.p*n;pp.pos.push({id:pp.id++,s:r.s,qty:n,entry:r.p,stop:r.stop,tgt:r.tgt,last:r.p,at:new Date().toISOString()});ok.push(r.s)});
+  ppSave();ppRender();
+  ppMsg((ok.length?"تم شراء: "+ok.join("، ")+". ":"")+(no.length?"تخطّيت لعدم كفاية الرصيد: "+no.join("، ")+".":""));
 });
 ppRender();
 </script>
