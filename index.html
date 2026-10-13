@@ -88,6 +88,11 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 .bot-alert-actions{display:flex;gap:8px;margin-top:8px}
 .bot-alert .bot-btn{font-size:12px}
 .bot-meta{font-size:12px;color:var(--mu);margin:8px 0;overflow-wrap:anywhere}
+.pp-pos .top{gap:8px;flex-wrap:wrap}
+.pp-pos .bot-btn{font-size:12px;padding:5px 10px}
+.pp-up{color:var(--g)}.pp-dn{color:var(--r)}
+.pp-fields select{display:block;margin-top:4px;width:100%;min-height:44px;padding:9px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font-size:16px;font-family:inherit}
+.pp-buy{width:100%;background:var(--g);color:#fff;border-color:var(--g);font-weight:700}
 </style>
 </head>
 <body>
@@ -159,6 +164,30 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
   <button id="pnlClear" class="pnl-clear" type="button">مسح القيم</button>
   <p class="note">باستخدام سعر البيع تكون النتيجة لصفقة مباعة، وباستخدام السعر الحالي تكون تقديرية قبل البيع.</p>
 </section>
+<button id="ppToggle" class="pnl-toggle" type="button" aria-expanded="false" aria-controls="ppPanel">🧪 الحساب التجريبي</button>
+<section id="ppPanel" class="card pnl-panel" aria-labelledby="ppHeading" hidden>
+  <div class="pnl-heading"><h2 id="ppHeading">🧪 الحساب التجريبي</h2><button id="ppClose" class="pnl-close" type="button">إغلاق</button></div>
+  <p class="note">شراء وبيع بأموال افتراضية فقط. لا يُنفَّذ أي أمر لدى وسيط. الأسعار من البيانات اليومية، لذلك يُفحص الهدف ووقف الخسارة عند كل تحديث للبيانات.</p>
+  <div class="bot-stats">
+    <div>الرصيد المتاح<b class="ltr" id="ppCash">—</b></div>
+    <div>إجمالي الحساب<b class="ltr" id="ppEquity">—</b></div>
+    <div>ربح/خسارة مفتوحة<b class="ltr" id="ppOpen">—</b></div>
+    <div>ربح/خسارة محققة<b class="ltr" id="ppReal">—</b></div>
+  </div>
+  <div class="pnl-fields pp-fields">
+    <label for="ppSym">السهم<select id="ppSym"></select></label>
+    <label for="ppEntry">سعر الدخول ($)<input id="ppEntry" type="number" inputmode="decimal" step="any"></label>
+    <label for="ppQty">عدد الأسهم<input id="ppQty" type="number" inputmode="numeric" min="1" step="1"></label>
+    <label for="ppStop">وقف الخسارة ($)<input id="ppStop" type="number" inputmode="decimal" step="any"></label>
+    <label for="ppTgt">الهدف ($)<input id="ppTgt" type="number" inputmode="decimal" step="any"></label>
+    <label>التكلفة<input id="ppCost" readonly tabindex="-1"></label>
+  </div>
+  <button id="ppBuy" class="bot-btn pp-buy" type="button">شراء تجريبي</button>
+  <p id="ppMsg" class="bot-meta" role="status"></p>
+  <h3>الصفقات المفتوحة</h3><div id="ppList"></div>
+  <h3>الصفقات المغلقة</h3><div id="ppHist"></div>
+  <button id="ppReset" class="bot-btn" type="button">إعادة ضبط الحساب</button>
+</section>
 <div class="chips" id="chips"></div>
 <div id="list"></div>
 <div class="warn">بيانات يومية وليست أسعارًا لحظية. تحليل تعليمي وليس نصيحة مالية، ولا ربح مضمون. تحقق من السعر الحالي والأخبار وموعد الأرباح قبل أي صفقة.</div>
@@ -176,7 +205,7 @@ h+='<div class="card" id="stock-'+esc(r.s)+'"><div class="top"><div><span class=
 +'<div class="bar"><i style="width:'+Math.max(0,Math.min(100,r.total))+'%;background:'+c+'"></i></div><div class="sc">الدرجة '+r.total+' من 100 · RSI '+r.rsi+' · 6 أشهر '+r.ret6m+'%</div>'
 +'<div class="grid"><div>الدخول<b class="ltr">'+r.p.toFixed(2)+'</b></div><div>الوقف<b class="ltr">'+r.stop.toFixed(2)+'</b></div><div>الهدف<b class="ltr">'+r.tgt.toFixed(2)+'</b></div><div>الكمية<b>'+qty(r)+'</b></div></div>'
 +(r.why&&r.why.length?'<div class="why">'+esc(r.why.join("، "))+'</div>':'')
-+'<button type="button" class="pnl-stock" data-pnl="'+esc(r.s)+'" aria-label="حساب الربح والخسارة لسهم '+esc(r.s)+'">💰 حساب الربح والخسارة</button></div>'});
++'<button type="button" class="pnl-stock" data-pnl="'+esc(r.s)+'" aria-label="حساب الربح والخسارة لسهم '+esc(r.s)+'">💰 حساب الربح والخسارة</button><button type="button" class="pnl-stock" data-paper="'+esc(r.s)+'">🧪 شراء تجريبي</button></div>'});
 document.getElementById("list").innerHTML=h||'<div class="note">لا نتائج.</div>'}
 document.getElementById("chips").addEventListener("click",function(e){var f=e.target.getAttribute("data-f");if(f){filter=f;chips();render()}});
 function rd(){cap=parseFloat(document.getElementById("cap").value)||0;risk=parseFloat(document.getElementById("risk").value)||0;render();botRender()}
@@ -228,7 +257,7 @@ document.getElementById("pnlClear").addEventListener("click",function(){
   document.getElementById("pnlHint").textContent="أدخل سعر الشراء والكمية، وسعر البيع أو السعر الحالي لحساب النتيجة.";
   pnlUpdate();document.getElementById("pnlBuy").focus();
 });
-document.getElementById("list").addEventListener("click",function(e){var symbol=e.target.getAttribute("data-pnl");if(symbol)pnlOpenStock(symbol)});
+document.getElementById("list").addEventListener("click",function(e){var symbol=e.target.getAttribute("data-pnl");if(symbol)pnlOpenStock(symbol);var ps=e.target.getAttribute("data-paper");if(ps)ppOpenStock(ps)});
 var d=document.getElementById("date");
 var BOT_KEY="stocks.alerts.v1",BOT_MAX_AGE=36*36e5,botStorageOk=true;
 var botState=botLoad(),botSnapshot=null,botLoading=false,botCheckedAt=null,botAudio=null;
@@ -262,7 +291,7 @@ function botNewEntries(previous,snapshot){
 }
 function botReceive(snapshot){
   if(botSnapshot&&snapshot.stamp<botSnapshot.stamp)return;
-  botSnapshot=snapshot;rows=snapshot.rows;
+  botSnapshot=snapshot;rows=snapshot.rows;ppSync();
   if(botState.active&&snapshot.stamp>botState.seen.stamp){
     var fresh=botFresh(snapshot,Date.now());
     var entries=botState.seen.stamp&&fresh?botNewEntries(botState.seen.recs,snapshot):[];
@@ -351,6 +380,86 @@ document.addEventListener("visibilitychange",function(){if(document.visibilitySt
 window.addEventListener("online",function(){if(botState.active||!botSnapshot)botFetch(false)});
 setInterval(function(){if(botState.active&&document.visibilityState==="visible")botFetch(false)},60000);
 botRender();chips();botFetch(false);
+
+var PP_KEY="stocks.paper.v1",pp=ppLoad();
+function ppLoad(){try{var s=JSON.parse(localStorage.getItem(PP_KEY)||"null");if(s&&typeof s.cash==="number"&&Array.isArray(s.pos)&&Array.isArray(s.hist))return s}catch(e){}return{cash:10000,pos:[],hist:[],id:1}}
+function ppSave(){try{localStorage.setItem(PP_KEY,JSON.stringify(pp))}catch(e){}}
+function ppUsd(n){return(n<0?"-":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function ppCls(n){return n>=0?"pp-up":"pp-dn"}
+function ppMsg(t){document.getElementById("ppMsg").textContent=t}
+function ppClose(p,price,why){var pnl=(price-p.entry)*p.qty;pp.cash+=price*p.qty;pp.hist.unshift({s:p.s,qty:p.qty,entry:p.entry,exit:price,pnl:pnl,why:why,at:new Date().toISOString()});pp.hist=pp.hist.slice(0,100)}
+function ppSync(){
+  var closed=[];
+  pp.pos=pp.pos.filter(function(p){
+    var r=rows.find(function(x){return x.s===p.s});if(!r)return true;
+    p.last=r.p;
+    if(r.p>=p.tgt){ppClose(p,p.tgt,"تحقق الهدف");closed.push(p.s);return false}
+    if(r.p<=p.stop){ppClose(p,p.stop,"ضُرب وقف الخسارة");closed.push(p.s);return false}
+    return true;
+  });
+  ppSave();ppFillSel();ppRender();
+  if(closed.length)ppMsg("أُغلقت صفقات تلقائيًا بعد تحديث البيانات: "+closed.join("، "));
+}
+function ppFillSel(){
+  var sel=document.getElementById("ppSym"),cur=sel.value;
+  sel.innerHTML=rows.map(function(r){return'<option value="'+esc(r.s)+'">'+esc(r.s)+' — $'+r.p.toFixed(2)+'</option>'}).join("");
+  if(cur&&rows.some(function(r){return r.s===cur}))sel.value=cur;else if(rows.length)ppPrefill();
+}
+function ppPrefill(){
+  var r=rows.find(function(x){return x.s===document.getElementById("ppSym").value});if(!r)return;
+  document.getElementById("ppEntry").value=r.p.toFixed(2);
+  document.getElementById("ppQty").value=Math.max(1,qty(r));
+  document.getElementById("ppStop").value=r.stop.toFixed(2);
+  document.getElementById("ppTgt").value=r.tgt.toFixed(2);
+  ppCost();
+}
+function ppCost(){document.getElementById("ppCost").value=ppUsd((+document.getElementById("ppEntry").value||0)*(Math.floor(+document.getElementById("ppQty").value)||0))}
+function ppRender(){
+  var open=0,val=0;
+  pp.pos.forEach(function(p){var l=p.last||p.entry;open+=(l-p.entry)*p.qty;val+=l*p.qty});
+  var real=pp.hist.reduce(function(a,h){return a+h.pnl},0);
+  var g=function(i){return document.getElementById(i)};
+  g("ppCash").textContent=ppUsd(pp.cash);g("ppEquity").textContent=ppUsd(pp.cash+val);
+  g("ppOpen").textContent=ppUsd(open);g("ppOpen").className="ltr "+ppCls(open);
+  g("ppReal").textContent=ppUsd(real);g("ppReal").className="ltr "+ppCls(real);
+  g("ppList").innerHTML=pp.pos.length?pp.pos.map(function(p){
+    var l=p.last||p.entry,pnl=(l-p.entry)*p.qty,pct=(l/p.entry-1)*100;
+    return'<div class="bot-item pp-pos"><div class="top"><div><b class="sym ltr">'+esc(p.s)+'</b> <span class="px">'+p.qty+' سهم</span></div><strong class="ltr '+ppCls(pnl)+'">'+ppUsd(pnl)+' ('+pct.toFixed(2)+'%)</strong></div>'
+    +'<div class="grid"><div>الدخول<b class="ltr">'+p.entry.toFixed(2)+'</b></div><div>آخر سعر<b class="ltr">'+l.toFixed(2)+'</b></div><div>الوقف<b class="ltr">'+p.stop.toFixed(2)+'</b></div><div>الهدف<b class="ltr">'+p.tgt.toFixed(2)+'</b></div></div>'
+    +'<button class="bot-btn" type="button" data-psell="'+p.id+'">بيع الآن</button></div>'}).join(""):'<div class="note">لا توجد صفقات مفتوحة.</div>';
+  g("ppHist").innerHTML=pp.hist.length?pp.hist.slice(0,15).map(function(h){
+    return'<div class="bot-item"><div class="top"><strong class="sym ltr">'+esc(h.s)+'</strong><strong class="ltr '+ppCls(h.pnl)+'">'+ppUsd(h.pnl)+'</strong></div><div class="bot-meta">'+h.qty+' سهم · <span class="ltr">'+h.entry.toFixed(2)+' ← '+h.exit.toFixed(2)+'</span> · '+esc(h.why)+'</div></div>'}).join(""):'<div class="note">لا توجد صفقات مغلقة بعد.</div>';
+}
+function ppSetOpen(o){document.getElementById("ppPanel").hidden=!o;document.getElementById("ppToggle").setAttribute("aria-expanded",String(o))}
+function ppOpenStock(s){
+  if(!rows.some(function(r){return r.s===s}))return;
+  ppFillSel();document.getElementById("ppSym").value=s;ppPrefill();ppMsg("");ppSetOpen(true);
+  document.getElementById("ppPanel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+document.getElementById("ppToggle").addEventListener("click",function(){ppSetOpen(document.getElementById("ppPanel").hidden)});
+document.getElementById("ppClose").addEventListener("click",function(){ppSetOpen(false);document.getElementById("ppToggle").focus()});
+document.getElementById("ppSym").addEventListener("change",ppPrefill);
+["ppEntry","ppQty"].forEach(function(i){document.getElementById(i).addEventListener("input",ppCost)});
+document.getElementById("ppBuy").addEventListener("click",function(){
+  var s=document.getElementById("ppSym").value,e=+document.getElementById("ppEntry").value,q=Math.floor(+document.getElementById("ppQty").value),st=+document.getElementById("ppStop").value,t=+document.getElementById("ppTgt").value;
+  if(!s)return ppMsg("لا توجد بيانات أسهم بعد.");
+  if(!(e>0)||!(q>0))return ppMsg("أدخل سعر دخول وعددًا صحيحين.");
+  if(!(st>0)||st>=e)return ppMsg("وقف الخسارة يجب أن يكون أدنى من سعر الدخول.");
+  if(!(t>e))return ppMsg("الهدف يجب أن يكون أعلى من سعر الدخول.");
+  if(e*q>pp.cash)return ppMsg("الرصيد المتاح لا يكفي لهذه الصفقة.");
+  pp.cash-=e*q;pp.pos.push({id:pp.id++,s:s,qty:q,entry:e,stop:st,tgt:t,last:e,at:new Date().toISOString()});
+  ppSave();ppRender();ppMsg("تم شراء "+q+" سهم من "+s+" (تجريبي).");
+});
+document.getElementById("ppList").addEventListener("click",function(e){
+  var id=e.target.getAttribute("data-psell");if(!id)return;
+  var p=pp.pos.find(function(x){return String(x.id)===id});if(!p)return;
+  pp.pos=pp.pos.filter(function(x){return x!==p});ppClose(p,p.last||p.entry,"بيع يدوي");ppSave();ppRender();ppMsg("تم بيع "+p.s+" عند آخر سعر محمّل.");
+});
+document.getElementById("ppReset").addEventListener("click",function(){
+  var v=prompt("الرصيد الابتدائي للحساب التجريبي ($)",String(cap||10000));if(v===null)return;v=+v;if(!(v>0))return ppMsg("أدخل رصيدًا صحيحًا.");
+  pp={cash:v,pos:[],hist:[],id:1};ppSave();ppRender();ppMsg("أُعيد ضبط الحساب.");
+});
+ppRender();
 </script>
 </body>
 </html>
