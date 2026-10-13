@@ -59,6 +59,35 @@ input{width:100%;padding:9px;border:1px solid var(--bd);border-radius:10px;backg
 .pnl-clear{padding:7px 14px;font-size:13px}
 .pnl-stock{width:100%;margin-top:10px;padding:7px 10px;font-size:12px;color:var(--ac)}
 button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+.bot-toggle,.bot-btn{font:inherit;cursor:pointer;border:1px solid var(--bd);border-radius:10px;min-height:44px;padding:9px 12px;background:var(--card);color:var(--tx)}
+.bot-toggle{width:100%;font-weight:700;background:var(--ac);color:#fff;border-color:var(--ac);margin-bottom:10px}
+.bot-panel[hidden],.bot-alert[hidden],.bot-view[hidden]{display:none}
+.bot-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bot-heading h2{font-size:18px;margin:0}
+.bot-status{font-size:13px;font-weight:700;margin:10px 0;color:var(--mu)}
+.bot-status.active{color:var(--g)}
+.bot-status.stale{color:var(--a)}
+.bot-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bot-btn.primary{background:var(--ac);color:#fff;border-color:var(--ac)}
+.bot-btn:disabled{opacity:.55;cursor:wait}
+.bot-sound{display:flex;gap:7px;align-items:center;font-size:13px;min-height:44px}
+.bot-sound input{width:20px;height:20px;accent-color:var(--ac)}
+.bot-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.bot-stats div{background:var(--bg);border-radius:12px;padding:12px;text-align:center;font-size:12px;color:var(--mu)}
+.bot-stats b{display:block;color:var(--tx);font-size:26px}
+.bot-tabs{display:flex;gap:6px;margin:12px 0}
+.bot-tabs .bot-btn{flex:1;font-size:13px}
+.bot-tabs .bot-btn[aria-pressed="true"]{border-color:var(--ac);color:var(--ac);font-weight:700}
+.bot-item{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:10px;margin:8px 0}
+.bot-item .top{gap:8px;flex-wrap:wrap}
+.bot-item .sym{font-size:16px}
+.bot-item .bot-btn{font-size:12px;padding:5px 10px}
+.bot-item .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bot-item .grid b{overflow-wrap:anywhere}
+.bot-alert{border:1px solid var(--g);border-radius:12px;background:var(--card);padding:12px;margin:0 0 10px;color:var(--g)}
+.bot-alert-actions{display:flex;gap:8px;margin-top:8px}
+.bot-alert .bot-btn{font-size:12px}
+.bot-meta{font-size:12px;color:var(--mu);margin:8px 0;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -69,6 +98,50 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
   <label>رأس المال ($)<input id="cap" type="number" inputmode="decimal" value="10000"></label>
   <label>مخاطرة الصفقة (%)<input id="risk" type="number" inputmode="decimal" step="0.1" value="1"></label>
 </div>
+<button id="botToggle" class="bot-toggle" type="button" aria-expanded="false" aria-controls="botPanel">🤖 بوت تنبيهات الأسهم</button>
+<div id="botAlert" class="bot-alert" role="status" aria-live="polite" aria-atomic="true" hidden>
+  <strong id="botAlertText"></strong>
+  <div class="bot-alert-actions">
+    <button id="botViewAlert" class="bot-btn" type="button">عرض التنبيهات</button>
+    <button id="botDismiss" class="bot-btn" type="button">إخفاء</button>
+  </div>
+</div>
+<section id="botPanel" class="card bot-panel" aria-labelledby="botHeading" hidden>
+  <div class="bot-heading">
+    <h2 id="botHeading">🤖 مراقب إشارات الدخول</h2>
+    <button id="botClose" class="bot-btn" type="button">إغلاق</button>
+  </div>
+  <p class="note">تنبيهات تحليلية من البيانات اليومية. يعرض السهم والسعر المرجعي والهدف ووقف الخسارة؛ التنفيذ يكون بقرارك لدى وسيطك.</p>
+  <div id="botStatus" class="bot-status" role="status">التنبيهات متوقفة</div>
+  <div class="bot-controls">
+    <button id="botStart" class="bot-btn primary" type="button" disabled>تشغيل التنبيهات</button>
+    <button id="botRefresh" class="bot-btn" type="button">تحديث البيانات</button>
+    <label class="bot-sound"><input id="botSound" type="checkbox">صوت التنبيه</label>
+    <button id="botTestSound" class="bot-btn" type="button">تجربة الصوت</button>
+  </div>
+  <p class="note">قد تحتاج الضغط على «تجربة الصوت» بعد إعادة فتح التطبيق، بحسب إعدادات الجوال.</p>
+  <p id="botMessage" class="bot-meta" role="status"></p>
+  <div class="bot-stats">
+    <div>الأسهم في آخر تحديث<b id="botCount">—</b></div>
+    <div>إشارات الدخول الحالية<b id="botEntries">—</b></div>
+  </div>
+  <div id="botCheck" class="bot-meta">لم يُفحص ملف البيانات بعد.</div>
+  <p class="note">يفحص أحدث ملف بيانات كل دقيقة أثناء فتح التطبيق. تحليل الأسهم نفسه يُحدّث مرة يوميًا في أيام العمل. التنبيه لا يصل والجوال مقفل أو التطبيق مغلق.</p>
+  <div class="bot-tabs" aria-label="عرض البوت">
+    <button id="botOverviewTab" class="bot-btn" type="button" aria-pressed="true" aria-controls="botOverview">نظرة عامة</button>
+    <button id="botHistoryTab" class="bot-btn" type="button" aria-pressed="false" aria-controls="botHistory">سجل التنبيهات</button>
+  </div>
+  <div id="botOverview" class="bot-view">
+    <p class="note">إشارات الدخول الموجودة الآن لا تُعدّ تنبيهات جديدة. بعد التشغيل، يُسجّل انتقال السهم من حالة أخرى إلى «دخول» في تحديث أحدث.</p>
+    <div id="botCurrent"></div>
+    <button id="botShowEntries" class="bot-btn" type="button">عرض جميع إشارات الدخول</button>
+  </div>
+  <div id="botHistory" class="bot-view" hidden>
+    <p class="note">السجل محفوظ على هذا الجوال. يعرض سعر الإشارة يوم صدورها، وليس سعرًا حيًا أو صفقات منفّذة.</p>
+    <div id="botLog"></div>
+  </div>
+  <p id="botStorage" class="note"></p>
+</section>
 <button id="pnlToggle" class="pnl-toggle" type="button" aria-expanded="false" aria-controls="pnlPanel">💰 الربح والخسارة</button>
 <section id="pnlPanel" class="card pnl-panel" aria-labelledby="pnlHeading" hidden>
   <div class="pnl-heading">
@@ -88,7 +161,7 @@ button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 </section>
 <div class="chips" id="chips"></div>
 <div id="list"></div>
-<div class="warn">يتحدث تلقائيًا كل يوم عمل بعد افتتاح السوق. تحليل تعليمي وليس نصيحة مالية، ولا ربح مضمون. تحقق من السعر الحالي والأخبار وموعد الأرباح قبل أي صفقة.</div>
+<div class="warn">بيانات يومية وليست أسعارًا لحظية. تحليل تعليمي وليس نصيحة مالية، ولا ربح مضمون. تحقق من السعر الحالي والأخبار وموعد الأرباح قبل أي صفقة.</div>
 </main>
 <script>
 var LBL={ENTER:["دخول","--g"],PULLBACK:["انتظر تراجع","--b"],WATCH:["مراقبة","--a"],EARNINGS:["انتظر الأرباح","--o"],AVOID:["تجنب","--r"]};
@@ -99,14 +172,14 @@ function chips(){var f=[["ALL","الكل"],["ENTER","دخول"],["PULLBACK","ا�
 document.getElementById("chips").innerHTML=f.map(function(x){return'<button class="chip'+(filter===x[0]?" on":"")+'" data-f="'+x[0]+'">'+x[1]+'</button>'}).join("")}
 function render(){var h="";rows.filter(function(r){return filter==="ALL"||r.rec===filter}).forEach(function(r){
 var m=LBL[r.rec]||[r.rec,"--tx"],c="var("+m[1]+")";
-h+='<div class="card"><div class="top"><div><span class="sym ltr">'+esc(r.s)+'</span> <span class="px ltr">$'+r.p.toFixed(2)+'</span></div><span class="badge" style="background:'+c+'">'+esc(m[0])+'</span></div>'
+h+='<div class="card" id="stock-'+esc(r.s)+'"><div class="top"><div><span class="sym ltr">'+esc(r.s)+'</span> <span class="px ltr">$'+r.p.toFixed(2)+'</span></div><span class="badge" style="background:'+c+'">'+esc(m[0])+'</span></div>'
 +'<div class="bar"><i style="width:'+Math.max(0,Math.min(100,r.total))+'%;background:'+c+'"></i></div><div class="sc">الدرجة '+r.total+' من 100 · RSI '+r.rsi+' · 6 أشهر '+r.ret6m+'%</div>'
 +'<div class="grid"><div>الدخول<b class="ltr">'+r.p.toFixed(2)+'</b></div><div>الوقف<b class="ltr">'+r.stop.toFixed(2)+'</b></div><div>الهدف<b class="ltr">'+r.tgt.toFixed(2)+'</b></div><div>الكمية<b>'+qty(r)+'</b></div></div>'
 +(r.why&&r.why.length?'<div class="why">'+esc(r.why.join("، "))+'</div>':'')
 +'<button type="button" class="pnl-stock" data-pnl="'+esc(r.s)+'" aria-label="حساب الربح والخسارة لسهم '+esc(r.s)+'">💰 حساب الربح والخسارة</button></div>'});
 document.getElementById("list").innerHTML=h||'<div class="note">لا نتائج.</div>'}
 document.getElementById("chips").addEventListener("click",function(e){var f=e.target.getAttribute("data-f");if(f){filter=f;chips();render()}});
-function rd(){cap=parseFloat(document.getElementById("cap").value)||0;risk=parseFloat(document.getElementById("risk").value)||0;render()}
+function rd(){cap=parseFloat(document.getElementById("cap").value)||0;risk=parseFloat(document.getElementById("risk").value)||0;render();botRender()}
 document.getElementById("cap").addEventListener("input",rd);document.getElementById("risk").addEventListener("input",rd);
 function calcPnl(buy,sell,amount,fees){
   if(![buy,sell,amount,fees].every(function(v){return typeof v==="number"&&Number.isFinite(v)})||buy<=0||sell<0||amount<=0||fees<0)return null;
@@ -157,10 +230,127 @@ document.getElementById("pnlClear").addEventListener("click",function(){
 });
 document.getElementById("list").addEventListener("click",function(e){var symbol=e.target.getAttribute("data-pnl");if(symbol)pnlOpenStock(symbol)});
 var d=document.getElementById("date");
-fetch("data.json?t="+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(o){
-rows=o.rows||[];var t=new Date(o.updated),age=(Date.now()-t)/36e5;
-d.textContent="آخر تحديث: "+t.toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"})+(age>96?" ⚠️ البيانات قديمة":"");
-chips();render()}).catch(function(){d.textContent="لم تُنشأ البيانات بعد. شغّل التحديث من تبويب Actions في GitHub.";chips()});
+var BOT_KEY="stocks.alerts.v1",BOT_MAX_AGE=36*36e5,botStorageOk=true;
+var botState=botLoad(),botSnapshot=null,botLoading=false,botCheckedAt=null,botAudio=null;
+function botValidRow(r){
+  return r&&typeof r.s==="string"&&/^[A-Z0-9.^-]{1,16}$/.test(r.s)&&Object.prototype.hasOwnProperty.call(LBL,r.rec)
+    &&[r.p,r.stop,r.tgt,r.total,r.rsi,r.ret6m].every(function(n){return typeof n==="number"&&Number.isFinite(n)})
+    &&r.p>0&&r.stop>0&&r.stop<r.p&&r.tgt>r.p&&r.total>=0&&r.total<=100
+    &&Array.isArray(r.why)&&r.why.every(function(x){return typeof x==="string"});
+}
+function botLoad(){
+  var fallback={active:false,sound:false,seen:{stamp:0,recs:{}},history:[]};
+  try{
+    var saved=JSON.parse(localStorage.getItem(BOT_KEY)||"null");
+    if(!saved||!saved.seen||typeof saved.seen.stamp!=="number"||!Number.isFinite(saved.seen.stamp)||saved.seen.stamp<0)return fallback;
+    var recs={};Object.keys(saved.seen.recs||{}).forEach(function(s){if(/^[A-Z0-9.^-]{1,16}$/.test(s)&&Object.prototype.hasOwnProperty.call(LBL,saved.seen.recs[s]))recs[s]=saved.seen.recs[s]});
+    var history=Array.isArray(saved.history)?saved.history.filter(function(e){return e&&botValidRow(e)&&typeof e.updated==="string"&&Number.isFinite(Date.parse(e.updated))&&typeof e.noticed==="string"&&Number.isFinite(Date.parse(e.noticed))}).slice(0,50):[];
+    return{active:saved.active===true,sound:saved.sound===true,seen:{stamp:saved.seen.stamp,recs:recs},history:history};
+  }catch(e){botStorageOk=false;return fallback}
+}
+function botSave(){try{localStorage.setItem(BOT_KEY,JSON.stringify(botState));botStorageOk=true}catch(e){botStorageOk=false}}
+function botFresh(snapshot,now){return !!snapshot&&snapshot.stamp<=now+5*60000&&now-snapshot.stamp<=BOT_MAX_AGE}
+function botParse(o){
+  var stamp=o&&typeof o.updated==="string"?Date.parse(o.updated):NaN;
+  if(!Number.isFinite(stamp)||stamp>Date.now()+5*60000||!Array.isArray(o.rows)||!o.rows.length||!o.rows.every(botValidRow))throw new Error("invalid data");
+  var names=new Set(o.rows.map(function(r){return r.s}));if(names.size!==o.rows.length)throw new Error("duplicate symbol");
+  return{stamp:stamp,updated:o.updated,rows:o.rows};
+}
+function botRecs(snapshot,previous){var recs=Object.assign({},previous||{});snapshot.rows.forEach(function(r){recs[r.s]=r.rec});return recs}
+function botNewEntries(previous,snapshot){
+  return snapshot.rows.filter(function(r){return r.rec==="ENTER"&&Object.prototype.hasOwnProperty.call(previous,r.s)&&previous[r.s]!=="ENTER"});
+}
+function botReceive(snapshot){
+  if(botSnapshot&&snapshot.stamp<botSnapshot.stamp)return;
+  botSnapshot=snapshot;rows=snapshot.rows;
+  if(botState.active&&snapshot.stamp>botState.seen.stamp){
+    var fresh=botFresh(snapshot,Date.now());
+    var entries=botState.seen.stamp&&fresh?botNewEntries(botState.seen.recs,snapshot):[];
+    botState.seen={stamp:snapshot.stamp,recs:botRecs(snapshot,botState.seen.recs)};
+    if(entries.length){
+      var events=entries.map(function(r){return Object.assign({},r,{updated:snapshot.updated,noticed:new Date().toISOString()})});
+      botState.history=events.concat(botState.history).slice(0,50);
+      document.getElementById("botAlertText").textContent="🔔 إشارة دخول جديدة في التحديث اليومي: "+entries.map(function(r){return r.s}).join(" · ")+". افتح السجل لمراجعة السعر والهدف والوقف.";
+      document.getElementById("botAlert").hidden=false;
+      if(botState.sound&&document.visibilityState==="visible")botPlaySound();
+    }
+    botSave();
+  }
+  d.textContent="آخر تحديث للبيانات: "+botDate(snapshot.updated)+(botFresh(snapshot,Date.now())?"":" ⚠️ البيانات أقدم من 36 ساعة؛ التنبيهات معلّقة");
+  chips();render();botRender();
+}
+function botDate(value){return new Date(value).toLocaleString("ar",{dateStyle:"medium",timeStyle:"short"})}
+function botRender(){
+  var active=botState.active,fresh=botFresh(botSnapshot,Date.now()),status=document.getElementById("botStatus");
+  status.className="bot-status"+(active&&fresh?" active":active?" stale":"");
+  status.textContent=active?(fresh?"🟢 التنبيهات مفعّلة أثناء فتح التطبيق":"🟠 مفعّل · ينتظر بيانات حديثة"):"⏸ التنبيهات متوقفة";
+  document.getElementById("botStart").textContent=active?"إيقاف التنبيهات":"تشغيل التنبيهات";
+  document.getElementById("botStart").disabled=!botSnapshot||botLoading;
+  document.getElementById("botRefresh").disabled=botLoading;
+  document.getElementById("botRefresh").textContent=botLoading?"جارٍ التحديث…":"تحديث البيانات";
+  document.getElementById("botSound").checked=botState.sound;
+  document.getElementById("botCount").textContent=botSnapshot?String(rows.length):"—";
+  var entries=rows.filter(function(r){return r.rec==="ENTER"});
+  document.getElementById("botEntries").textContent=botSnapshot?String(entries.length):"—";
+  document.getElementById("botCheck").textContent=(botCheckedAt?"آخر فحص للملف: "+botDate(botCheckedAt)+" · ":"")+(botSnapshot?"تحديث التحليل: "+botDate(botSnapshot.updated):"لم تُحمّل البيانات بعد.");
+  document.getElementById("botShowEntries").disabled=!entries.length;
+  document.getElementById("botCurrent").innerHTML=entries.slice(0,5).map(function(r){return '<div class="bot-item"><div class="top"><div><b class="sym ltr">'+esc(r.s)+'</b> <span class="px ltr">$'+r.p.toFixed(2)+'</span></div><button class="bot-btn" type="button" data-bot-stock="'+esc(r.s)+'">عرض السهم</button></div><div class="note">إشارة دخول حالية · الدرجة '+r.total+'/100</div></div>'}).join("")||'<div class="note">'+(botSnapshot?"لا توجد إشارات دخول في آخر تحديث.":"جارٍ تحميل البيانات…")+'</div>';
+  document.getElementById("botLog").innerHTML=botState.history.slice(0,20).map(function(e){return '<div class="bot-item"><div class="top"><strong class="sym ltr">🔔 '+esc(e.s)+'</strong><span class="note">إشارة دخول</span></div><div class="grid"><div>السعر المرجعي<b class="ltr">$'+e.p.toFixed(2)+'</b></div><div>وقف الخسارة<b class="ltr">$'+e.stop.toFixed(2)+'</b></div><div>الهدف<b class="ltr">$'+e.tgt.toFixed(2)+'</b></div></div><div class="note">تحديث التحليل: '+esc(botDate(e.updated))+'<br>رصدها التطبيق: '+esc(botDate(e.noticed))+'</div><button class="bot-btn" type="button" data-bot-stock="'+esc(e.s)+'">عرض أحدث بيانات السهم</button></div>'}).join("")||'<div class="note">لا تنبيهات مسجّلة بعد. تظهر هنا إشارات الدخول الجديدة بعد تشغيل البوت.</div>';
+  document.getElementById("botStorage").textContent=botStorageOk?"الإعدادات والسجل محفوظان على هذا الجهاز؛ لا يتزامنان بين الأجهزة.":"تعذّر حفظ السجل على هذا الجهاز. عند إغلاق التطبيق قد تُفقد الإعدادات والتنبيهات.";
+}
+function botSetOpen(open){document.getElementById("botPanel").hidden=!open;document.getElementById("botToggle").setAttribute("aria-expanded",String(open))}
+function botTab(history){document.getElementById("botOverview").hidden=history;document.getElementById("botHistory").hidden=!history;document.getElementById("botOverviewTab").setAttribute("aria-pressed",String(!history));document.getElementById("botHistoryTab").setAttribute("aria-pressed",String(history))}
+function botPrepareAudio(){
+  try{var Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return Promise.resolve(false);if(!botAudio)botAudio=new Audio();return Promise.resolve(botAudio.resume()).then(function(){return botAudio.state==="running"}).catch(function(){return false})}catch(e){return Promise.resolve(false)}
+}
+function botPlaySound(){
+  if(!botAudio||botAudio.state!=="running")return false;
+  try{
+    var start=botAudio.currentTime;[0,.22].forEach(function(offset){var tone=botAudio.createOscillator(),gain=botAudio.createGain();tone.frequency.value=880;tone.connect(gain);gain.connect(botAudio.destination);gain.gain.setValueAtTime(0,start+offset);gain.gain.linearRampToValueAtTime(.12,start+offset+.02);gain.gain.exponentialRampToValueAtTime(.001,start+offset+.16);tone.start(start+offset);tone.stop(start+offset+.18)});return true;
+  }catch(e){return false}
+}
+function botFetch(manual){
+  if(botLoading)return Promise.resolve(false);
+  botLoading=true;botRender();
+  if(manual)document.getElementById("botMessage").textContent="جارٍ جلب أحدث ملف بيانات منشور…";
+  return fetch("data.json?t="+Date.now(),{cache:"no-store"}).then(function(response){if(!response.ok)throw new Error("fetch failed");return response.json()}).then(function(o){
+    var snapshot=botParse(o),previous=botSnapshot?botSnapshot.stamp:0;
+    if(previous&&snapshot.stamp<previous)throw new Error("older data");
+    botCheckedAt=new Date().toISOString();botReceive(snapshot);
+    document.getElementById("botMessage").textContent=botFresh(snapshot,Date.now())?(manual?(snapshot.stamp>previous?"تم جلب تحديث أحدث للبيانات.":"هذا أحدث ملف منشور. زر التحديث لا يشغّل تحليلًا جديدًا للسوق."):""):"ملف البيانات أقدم من 36 ساعة. لن تُرسل إشارات دخول جديدة حتى يصل تحديث حديث.";
+    return true;
+  }).catch(function(){
+    document.getElementById("botMessage").textContent=botSnapshot?"تعذّر جلب تحديث جديد. تظهر آخر بيانات محمّلة، ولن يُسجّل تنبيه من محاولة فاشلة.":"تعذّر تحميل البيانات. تحقق من الاتصال ومن نجاح التحديث في Actions على GitHub.";
+    if(!botSnapshot)d.textContent="تعذّر تحميل ملف البيانات. أعد المحاولة.";
+    return false;
+  }).finally(function(){botLoading=false;botRender();chips()});
+}
+document.getElementById("botToggle").addEventListener("click",function(){botSetOpen(document.getElementById("botPanel").hidden)});
+document.getElementById("botClose").addEventListener("click",function(){botSetOpen(false);document.getElementById("botToggle").focus()});
+document.getElementById("botStart").addEventListener("click",function(){
+  if(!botSnapshot||botLoading)return;
+  botState.active=!botState.active;
+  if(botState.active){botState.seen={stamp:botSnapshot.stamp,recs:botRecs(botSnapshot)};if(botState.sound)botPrepareAudio();document.getElementById("botMessage").textContent="بدأت المراقبة من هذا التحديث. التنبيه لأول انتقال جديد إلى «دخول» بعد التشغيل."}
+  else{document.getElementById("botMessage").textContent="أوقفت التنبيهات. سجل الإشارات السابقة محفوظ.";document.getElementById("botAlert").hidden=true}
+  botSave();botRender();
+});
+document.getElementById("botRefresh").addEventListener("click",function(){botFetch(true)});
+document.getElementById("botSound").addEventListener("change",function(e){botState.sound=e.target.checked;botSave();if(botState.sound)botPrepareAudio().then(function(ok){document.getElementById("botMessage").textContent=ok?"الصوت مفعّل أثناء فتح التطبيق. جرّبه للتأكد من إعدادات الجوال.":"الصوت غير متاح حاليًا. ستظهر التنبيهات بصريًا داخل التطبيق."})});
+document.getElementById("botTestSound").addEventListener("click",function(){botPrepareAudio().then(function(ok){document.getElementById("botMessage").textContent=ok&&botPlaySound()?"تم تشغيل صوت تجريبي؛ هذا ليس تنبيه سهم.":"تعذّر تشغيل الصوت. تحقق من وضع الصامت ومستوى الصوت في الجوال."})});
+document.getElementById("botOverviewTab").addEventListener("click",function(){botTab(false)});
+document.getElementById("botHistoryTab").addEventListener("click",function(){botTab(true)});
+document.getElementById("botDismiss").addEventListener("click",function(){document.getElementById("botAlert").hidden=true});
+document.getElementById("botViewAlert").addEventListener("click",function(){botSetOpen(true);botTab(true);document.getElementById("botPanel").scrollIntoView({behavior:"smooth",block:"start"})});
+document.getElementById("botShowEntries").addEventListener("click",function(){filter="ENTER";chips();render();document.getElementById("chips").scrollIntoView({behavior:"smooth",block:"start"})});
+document.getElementById("botPanel").addEventListener("click",function(e){
+  var symbol=e.target.getAttribute("data-bot-stock");if(!symbol)return;
+  if(!rows.some(function(r){return r.s===symbol})){document.getElementById("botMessage").textContent="السهم غير موجود في آخر ملف بيانات محمّل.";return}
+  filter="ALL";chips();render();var card=document.getElementById("stock-"+symbol);if(card)card.scrollIntoView({behavior:"smooth",block:"start"});
+});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&botState.active)botFetch(false)});
+window.addEventListener("online",function(){if(botState.active||!botSnapshot)botFetch(false)});
+setInterval(function(){if(botState.active&&document.visibilityState==="visible")botFetch(false)},60000);
+botRender();chips();botFetch(false);
 </script>
 </body>
 </html>
