@@ -36,6 +36,29 @@ input{width:100%;padding:9px;border:1px solid var(--bd);border-radius:10px;backg
 .note{font-size:12px;color:var(--mu);margin:8px 0}
 .warn{font-size:12px;color:var(--mu);text-align:center;margin:16px 0 8px}
 .ltr{direction:ltr;display:inline-block}
+.pnl-toggle,.pnl-stock,.pnl-clear,.pnl-close{font:inherit;cursor:pointer;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);min-height:44px}
+.pnl-toggle{width:100%;text-align:center;font-weight:700;color:var(--ac);padding:10px 12px;margin:0 0 10px}
+.pnl-toggle[aria-expanded="true"]{background:var(--ac);border-color:var(--ac);color:#fff}
+.pnl-panel[hidden]{display:none}
+.pnl-panel{margin-bottom:14px;padding:14px}
+.pnl-heading{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.pnl-heading h2{font-size:17px;margin:0}
+.pnl-close{padding:4px 10px;font-size:13px;flex:none}
+.pnl-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.pnl-fields label{font-size:12px;color:var(--mu);min-width:0;display:flex;flex-direction:column;justify-content:flex-end}
+.pnl-fields input{display:block;margin-top:4px;direction:ltr;text-align:left;min-height:44px}
+.pnl-result{border:1px solid var(--bd);border-radius:12px;background:var(--bg);padding:14px;text-align:center;margin:12px 0}
+.pnl-result.profit{border-color:var(--g)}
+.pnl-result.loss{border-color:var(--r)}
+.pnl-label{font-size:14px;font-weight:700}
+.pnl-amount{font-size:30px;font-weight:800;line-height:1.3;overflow-wrap:anywhere}
+.pnl-result.profit .pnl-label,.pnl-result.profit .pnl-amount,.pnl-result.profit .pnl-percent{color:var(--g)}
+.pnl-result.loss .pnl-label,.pnl-result.loss .pnl-amount,.pnl-result.loss .pnl-percent{color:var(--r)}
+.pnl-percent{font-size:16px}
+.pnl-detail{font-size:12px;color:var(--mu);margin-top:8px;overflow-wrap:anywhere}
+.pnl-clear{padding:7px 14px;font-size:13px}
+.pnl-stock{width:100%;margin-top:10px;padding:7px 10px;font-size:12px;color:var(--ac)}
+button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 </style>
 </head>
 <body>
@@ -46,6 +69,23 @@ input{width:100%;padding:9px;border:1px solid var(--bd);border-radius:10px;backg
   <label>رأس المال ($)<input id="cap" type="number" inputmode="decimal" value="10000"></label>
   <label>مخاطرة الصفقة (%)<input id="risk" type="number" inputmode="decimal" step="0.1" value="1"></label>
 </div>
+<button id="pnlToggle" class="pnl-toggle" type="button" aria-expanded="false" aria-controls="pnlPanel">💰 الربح والخسارة</button>
+<section id="pnlPanel" class="card pnl-panel" aria-labelledby="pnlHeading" hidden>
+  <div class="pnl-heading">
+    <h2 id="pnlHeading">💰 حساب الربح والخسارة</h2>
+    <button id="pnlClose" class="pnl-close" type="button">إغلاق</button>
+  </div>
+  <p id="pnlHint" class="note">أدخل سعر الشراء والكمية، وسعر البيع أو السعر الحالي لحساب النتيجة.</p>
+  <div class="pnl-fields">
+    <label for="pnlBuy">سعر الشراء ($)<input id="pnlBuy" type="number" inputmode="decimal" min="0" step="any" placeholder="مثال: 100"></label>
+    <label for="pnlSell">سعر البيع / السعر الحالي ($)<input id="pnlSell" type="number" inputmode="decimal" min="0" step="any" placeholder="مثال: 110"></label>
+    <label for="pnlQty">عدد الأسهم<input id="pnlQty" type="number" inputmode="decimal" min="0" step="any" placeholder="مثال: 2"></label>
+    <label for="pnlFees">إجمالي رسوم الشراء والبيع ($)<input id="pnlFees" type="number" inputmode="decimal" min="0" step="any" value="0"></label>
+  </div>
+  <div id="pnlResult" class="pnl-result" role="status" aria-live="polite" aria-atomic="true">أدخل البيانات لإظهار النتيجة.</div>
+  <button id="pnlClear" class="pnl-clear" type="button">مسح القيم</button>
+  <p class="note">باستخدام سعر البيع تكون النتيجة لصفقة مباعة، وباستخدام السعر الحالي تكون تقديرية قبل البيع.</p>
+</section>
 <div class="chips" id="chips"></div>
 <div id="list"></div>
 <div class="warn">يتحدث تلقائيًا كل يوم عمل بعد افتتاح السوق. تحليل تعليمي وليس نصيحة مالية، ولا ربح مضمون. تحقق من السعر الحالي والأخبار وموعد الأرباح قبل أي صفقة.</div>
@@ -62,11 +102,60 @@ var m=LBL[r.rec]||[r.rec,"--tx"],c="var("+m[1]+")";
 h+='<div class="card"><div class="top"><div><span class="sym ltr">'+esc(r.s)+'</span> <span class="px ltr">$'+r.p.toFixed(2)+'</span></div><span class="badge" style="background:'+c+'">'+esc(m[0])+'</span></div>'
 +'<div class="bar"><i style="width:'+Math.max(0,Math.min(100,r.total))+'%;background:'+c+'"></i></div><div class="sc">الدرجة '+r.total+' من 100 · RSI '+r.rsi+' · 6 أشهر '+r.ret6m+'%</div>'
 +'<div class="grid"><div>الدخول<b class="ltr">'+r.p.toFixed(2)+'</b></div><div>الوقف<b class="ltr">'+r.stop.toFixed(2)+'</b></div><div>الهدف<b class="ltr">'+r.tgt.toFixed(2)+'</b></div><div>الكمية<b>'+qty(r)+'</b></div></div>'
-+(r.why&&r.why.length?'<div class="why">'+esc(r.why.join("، "))+'</div>':'')+'</div>'});
++(r.why&&r.why.length?'<div class="why">'+esc(r.why.join("، "))+'</div>':'')
++'<button type="button" class="pnl-stock" data-pnl="'+esc(r.s)+'" aria-label="حساب الربح والخسارة لسهم '+esc(r.s)+'">💰 حساب الربح والخسارة</button></div>'});
 document.getElementById("list").innerHTML=h||'<div class="note">لا نتائج.</div>'}
 document.getElementById("chips").addEventListener("click",function(e){var f=e.target.getAttribute("data-f");if(f){filter=f;chips();render()}});
 function rd(){cap=parseFloat(document.getElementById("cap").value)||0;risk=parseFloat(document.getElementById("risk").value)||0;render()}
 document.getElementById("cap").addEventListener("input",rd);document.getElementById("risk").addEventListener("input",rd);
+function calcPnl(buy,sell,amount,fees){
+  if(![buy,sell,amount,fees].every(function(v){return typeof v==="number"&&Number.isFinite(v)})||buy<=0||sell<0||amount<=0||fees<0)return null;
+  var cost=buy*amount,proceeds=sell*amount,net=(sell-buy)*amount-fees,percent=net/cost*100;
+  if(![cost,proceeds,net,percent].every(Number.isFinite)||cost<=0)return null;
+  return{cost:cost,proceeds:proceeds,net:net,percent:percent,fees:fees};
+}
+function pnlNum(n){return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:4})}
+function pnlUpdate(){
+  var out=document.getElementById("pnlResult"),ids=["pnlBuy","pnlSell","pnlQty","pnlFees"];
+  var values=ids.map(function(id){return document.getElementById(id).value.trim()});
+  out.className="pnl-result";
+  if(values.slice(0,3).some(function(v){return v===""})){out.textContent="أدخل سعر الشراء وسعر البيع أو السعر الحالي وعدد الأسهم لإظهار النتيجة.";return}
+  var result=calcPnl(Number(values[0]),Number(values[1]),Number(values[2]),values[3]===""?0:Number(values[3]));
+  if(!result){out.textContent="تحقق من الأرقام: سعر الشراء والكمية أكبر من صفر، وسعر البيع والرسوم صفر أو أكثر.";return}
+  var profit=result.net>0,loss=result.net<0,sign=profit?"+":loss?"-":"";
+  out.className="pnl-result"+(profit?" profit":loss?" loss":"");
+  out.innerHTML='<div class="pnl-label">'+(profit?"📈 ربح بعد الرسوم":loss?"📉 خسارة بعد الرسوم":"⚖️ تعادل بعد الرسوم")+'</div>'
+    +'<div class="pnl-amount"><span class="ltr">'+sign+'$'+pnlNum(Math.abs(result.net))+'</span></div>'
+    +'<div class="pnl-percent"><span class="ltr">'+sign+Math.abs(result.percent).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})+'%</span> من قيمة الشراء</div>'
+    +'<div class="pnl-detail">قيمة الشراء: <span class="ltr">$'+pnlNum(result.cost)+'</span><br>قيمة البيع / التقييم: <span class="ltr">$'+pnlNum(result.proceeds)+'</span><br>الرسوم: <span class="ltr">$'+pnlNum(result.fees)+'</span></div>';
+}
+function pnlSetOpen(open){
+  document.getElementById("pnlPanel").hidden=!open;
+  document.getElementById("pnlToggle").setAttribute("aria-expanded",String(open));
+}
+function pnlOpenStock(symbol){
+  var row=rows.find(function(r){return r.s===symbol});
+  if(!row)return;
+  document.getElementById("pnlHeading").textContent="💰 الربح والخسارة · "+symbol;
+  document.getElementById("pnlHint").textContent="سعر "+symbol+" مأخوذ من آخر تحديث، وليس سعرًا لحظيًا. أدخل سعر شراءك والكمية، وعدّل سعر البيع أو السعر الحالي عند الحاجة.";
+  document.getElementById("pnlBuy").value="";
+  document.getElementById("pnlSell").value=row.p.toFixed(2);
+  document.getElementById("pnlQty").value="";
+  document.getElementById("pnlFees").value="0";
+  pnlSetOpen(true);pnlUpdate();
+  document.getElementById("pnlPanel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+document.getElementById("pnlToggle").addEventListener("click",function(){pnlSetOpen(document.getElementById("pnlPanel").hidden)});
+document.getElementById("pnlClose").addEventListener("click",function(){pnlSetOpen(false);document.getElementById("pnlToggle").focus()});
+["pnlBuy","pnlSell","pnlQty","pnlFees"].forEach(function(id){document.getElementById(id).addEventListener("input",pnlUpdate)});
+document.getElementById("pnlClear").addEventListener("click",function(){
+  ["pnlBuy","pnlSell","pnlQty"].forEach(function(id){document.getElementById(id).value=""});
+  document.getElementById("pnlFees").value="0";
+  document.getElementById("pnlHeading").textContent="💰 حساب الربح والخسارة";
+  document.getElementById("pnlHint").textContent="أدخل سعر الشراء والكمية، وسعر البيع أو السعر الحالي لحساب النتيجة.";
+  pnlUpdate();document.getElementById("pnlBuy").focus();
+});
+document.getElementById("list").addEventListener("click",function(e){var symbol=e.target.getAttribute("data-pnl");if(symbol)pnlOpenStock(symbol)});
 var d=document.getElementById("date");
 fetch("data.json?t="+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(o){
 rows=o.rows||[];var t=new Date(o.updated),age=(Date.now()-t)/36e5;
