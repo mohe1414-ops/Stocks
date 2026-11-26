@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-25T23:26+00:00",
+  "updated": "2026-11-26T23:25+00:00",
   "rows": [
     {
       "s": "V",
@@ -23,7 +23,7 @@
         "PEG 2.0"
       ],
       "total": 90,
-      "earn_days": 62
+      "earn_days": 61
     },
     {
       "s": "LLY",
@@ -47,7 +47,7 @@
         "PEG 1.2"
       ],
       "total": 90,
-      "earn_days": 70
+      "earn_days": 69
     },
     {
       "s": "AAPL",
@@ -70,7 +70,7 @@
         "هامش 28%"
       ],
       "total": 81,
-      "earn_days": 64
+      "earn_days": 63
     },
     {
       "s": "A",
@@ -92,7 +92,7 @@
         "P/E 24"
       ],
       "total": 78,
-      "earn_days": -2
+      "earn_days": -3
     },
     {
       "s": "MSFT",
@@ -114,7 +114,7 @@
         "PEG 1.6"
       ],
       "total": 65,
-      "earn_days": 63
+      "earn_days": 62
     },
     {
       "s": "CRM",
@@ -136,7 +136,7 @@
         "PEG 0.5"
       ],
       "total": 65,
-      "earn_days": 7
+      "earn_days": 6
     },
     {
       "s": "META",
@@ -146,7 +146,7 @@
       "rsi": 46,
       "ret6m": -3.4,
       "stop": 559.18,
-      "tgt": 711.3,
+      "tgt": 711.31,
       "why": [
         "اتجاه صاعد",
         "RSI صحي",
@@ -158,7 +158,7 @@
         "PEG 1.3"
       ],
       "total": 62,
-      "earn_days": 63
+      "earn_days": 62
     },
     {
       "s": "COST",
@@ -178,7 +178,7 @@
         "نمو أرباح 15%"
       ],
       "total": 61,
-      "earn_days": 15
+      "earn_days": 14
     },
     {
       "s": "XOM",
@@ -199,7 +199,7 @@
         "PEG 0.3"
       ],
       "total": 59,
-      "earn_days": 65
+      "earn_days": 64
     },
     {
       "s": "TXN",
@@ -220,7 +220,7 @@
         "P/E 23"
       ],
       "total": 52,
-      "earn_days": 62
+      "earn_days": 61
     },
     {
       "s": "JPM",
@@ -229,8 +229,8 @@
       "rec": "AVOID",
       "rsi": 37,
       "ret6m": 6.8,
-      "stop": 300.72,
-      "tgt": 348.78,
+      "stop": 300.71,
+      "tgt": 348.81,
       "why": [
         "اتجاه صاعد",
         "أقوى من السوق",
@@ -240,7 +240,7 @@
         "PEG 1.6"
       ],
       "total": 45,
-      "earn_days": 50
+      "earn_days": 49
     },
     {
       "s": "NVDA",
@@ -260,7 +260,7 @@
         "PEG 0.2"
       ],
       "total": 40,
-      "earn_days": -8
+      "earn_days": -9
     },
     {
       "s": "AMZN",
@@ -279,7 +279,7 @@
         "PEG 0.6"
       ],
       "total": 34,
-      "earn_days": 71
+      "earn_days": 70
     },
     {
       "s": "AMD",
@@ -298,7 +298,7 @@
         "P/E 23"
       ],
       "total": 34,
-      "earn_days": 69
+      "earn_days": 68
     },
     {
       "s": "AVGO",
@@ -317,7 +317,7 @@
         "PEG 0.9"
       ],
       "total": 30,
-      "earn_days": 14
+      "earn_days": 13
     },
     {
       "s": "NFLX",
@@ -336,7 +336,7 @@
         "PEG 0.7"
       ],
       "total": 30,
-      "earn_days": 55
+      "earn_days": 54
     },
     {
       "s": "GOOGL",
@@ -354,7 +354,7 @@
         "PEG 0.5"
       ],
       "total": 24,
-      "earn_days": 70
+      "earn_days": 69
     },
     {
       "s": "ORCL",
@@ -372,7 +372,7 @@
         "P/E 9"
       ],
       "total": 24,
-      "earn_days": 19
+      "earn_days": 18
     },
     {
       "s": "TSLA",
@@ -388,7 +388,7 @@
         "P/E مرتفع 176"
       ],
       "total": 18,
-      "earn_days": 63
+      "earn_days": 62
     },
     {
       "s": "ETN",
@@ -404,7 +404,7 @@
         "P/E 19"
       ],
       "total": 12,
-      "earn_days": 69
+      "earn_days": 68
     }
   ],
   "skipped": []
